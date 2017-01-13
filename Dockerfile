@@ -12,6 +12,7 @@ RUN apt-get update -y && apt-get install -y \
     libxslt1-dev \
     libxslt1.1 \
     openssh-client \
+    rsync \
     unzip \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
