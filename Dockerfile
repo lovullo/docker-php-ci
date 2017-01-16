@@ -25,6 +25,7 @@ RUN docker-php-ext-configure imap --with-kerberos --with-imap-ssl && \
         gd \
         imap \
         json \
+        soap \
         xsl \
         zip
 
