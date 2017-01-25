@@ -35,6 +35,21 @@ RUN curl -o /tmp/composer-setup.php https://getcomposer.org/installer \
     && php -r "if (hash('SHA384', file_get_contents('/tmp/composer-setup.php')) !== trim(file_get_contents('/tmp/composer-setup.sig'))) { unlink('/tmp/composer-setup.php'); echo 'Invalid installer' . PHP_EOL; exit(1);  }" \
     && php /tmp/composer-setup.php --no-ansi --install-dir=/usr/local/bin --filename=composer \
     && rm /tmp/composer-setup.php
+    
+# Install Ant libraries
+RUN curl -O http://dl.google.com/closure-compiler/compiler-20161201.tar.gz && \
+    tar -xzvf compiler-20161201.tar.gz closure-compiler-v20161201.jar && \
+    mv -v closure-compiler-v20161201.jar /usr/share/ant/lib/closure-compiler.jar && \
+    chown root:root /usr/share/ant/lib/closure-compiler.jar && \
+    chmod 0644 /usr/share/ant/lib/closure-compiler.jar && \
+    rm compiler-20161201.tar.gz
+
+RUN curl -O -L https://downloads.sourceforge.net/project/xframe/xsddoc/xsddoc-1.0/xsddoc-1.0.tar.gz && \
+    tar -xzvf xsddoc-1.0.tar.gz xsddoc-1.0/lib/xsddoc.jar && \
+    mv -v xsddoc-1.0/lib/xsddoc.jar /usr/share/ant/lib && \
+    chown root:root /usr/share/ant/lib/xsddoc.jar && \
+    chmod 0644 /usr/share/ant/lib/xsddoc.jar && \
+    rm -r xsddoc-1.0/ xsddoc-1.0.tar.gz
 
 # Disable host key checking from within builds as we cannot interactively accept them
 # TODO: It might be a better idea to bake ~/.ssh/known_hosts into the container
