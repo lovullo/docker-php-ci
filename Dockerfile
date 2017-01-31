@@ -29,6 +29,10 @@ RUN docker-php-ext-configure imap --with-kerberos --with-imap-ssl && \
         xsl \
         zip
 
+# Install PECL Extensions
+RUN pecl install mongodb \
+    && docker-php-ext-enable mongodb
+
 # Install Composer
 RUN curl -o /tmp/composer-setup.php https://getcomposer.org/installer \
     && curl -o /tmp/composer-setup.sig https://composer.github.io/installer.sig \
