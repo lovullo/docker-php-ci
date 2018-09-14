@@ -33,6 +33,9 @@ RUN docker-php-ext-configure imap --with-kerberos --with-imap-ssl && \
 RUN pecl install mongodb \
     && docker-php-ext-enable mongodb
 
+# Fix php memory limit so that the phpdbg/phpunit test doesn't fail
+RUN echo "memory_limit = 256M" > "/usr/local/etc/php/conf.d/memory-limit.ini"
+
 # Install Composer
 RUN curl -o /tmp/composer-setup.php https://getcomposer.org/installer \
     && curl -o /tmp/composer-setup.sig https://composer.github.io/installer.sig \
