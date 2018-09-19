@@ -1,7 +1,4 @@
-FROM php:latest
-
-# Fix issues with slim debian and install java
-RUN mkdir -p /usr/share/man/man1
+FROM php:7.1-jessie
 
 # Update and Install Packages
 RUN apt-get update -y && apt-get install -y \
