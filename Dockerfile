@@ -1,6 +1,10 @@
 FROM php:7.2-stretch
 
 # Update and Install Packages
+# deal with slim variants not having man page directories (which causes "update-alternatives" to fail)
+RUN	if [ ! -d /usr/share/man/man1 ]; then \
+		mkdir -p /usr/share/man/man1; \
+	fi
 RUN apt-get update -y && apt-get install -y \
     ant \
     curl \
