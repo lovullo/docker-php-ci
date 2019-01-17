@@ -1,4 +1,4 @@
-FROM php:7.1-jessie
+FROM php:7.2-stretch
 
 # Update and Install Packages
 RUN apt-get update -y && apt-get install -y \
