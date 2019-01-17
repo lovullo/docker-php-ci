@@ -1,4 +1,9 @@
-FROM php:7.1-jessie
+FROM php:7.3-stretch
+
+# deal with slim variants not having man page directories (which causes "update-alternatives" to fail)
+RUN	if [ ! -d /usr/share/man/man1 ]; then \
+		mkdir -p /usr/share/man/man1; \
+	fi
 
 # Update and Install Packages
 RUN apt-get update -y && apt-get install -y \
@@ -14,6 +19,7 @@ RUN apt-get update -y && apt-get install -y \
     openssh-client \
     rsync \
     unzip \
+    libzip-dev \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
