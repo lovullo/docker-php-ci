@@ -39,10 +39,6 @@ RUN docker-php-ext-configure imap --with-kerberos --with-imap-ssl && \
 RUN pecl install mongodb \
     && docker-php-ext-enable mongodb
 
-# Add memcache constant, to fix failing phpunit tests
-RUN echo "<?php if( ! defined('MEMCACHE_COMPRESSED') ){ define('MEMCACHE_COMPRESSED',2);}" > "/usr/local/etc/php/conf.d/set-memcache-compressed-consts.php" \
-    && echo 'auto_prepend_file="/usr/local/etc/php/conf.d/set-memcache-compressed-consts.php"' > "/usr/local/etc/php/conf.d/set-memcache-compressed-consts.ini"
-
 # Fix php memory limit so that the phpdbg/phpunit test doesn't fail
 RUN echo "memory_limit = 256M" > "/usr/local/etc/php/conf.d/memory-limit.ini"
 
