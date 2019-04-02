@@ -1,5 +1,9 @@
-FROM php:7.1-jessie
+FROM php:7.1-stretch
 
+# deal with slim variants not having man page directories (which causes "update-alternatives" to fail)
+RUN	if [ ! -d /usr/share/man/man1 ]; then \
+		mkdir -p /usr/share/man/man1; \
+	fi
 # Update and Install Packages
 RUN apt-get update -y && apt-get install -y \
     ant \
