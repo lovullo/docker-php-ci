@@ -38,6 +38,9 @@ RUN pecl install mongodb \
 # Fix php memory limit so that the phpdbg/phpunit test doesn't fail
 RUN echo "memory_limit = 256M" > "/usr/local/etc/php/conf.d/memory-limit.ini"
 
+# Display all errors by default
+RUN echo "error_reporting = E_ALL" > "/usr/local/etc/php/conf.d/error-reporting.ini"
+
 # Install Composer
 RUN curl -o /tmp/composer-setup.php https://getcomposer.org/installer \
     && curl -o /tmp/composer-setup.sig https://composer.github.io/installer.sig \
