@@ -35,6 +35,21 @@ RUN docker-php-ext-configure imap --with-kerberos --with-imap-ssl && \
         xsl \
         zip
 
+RUN cd ~/ && \
+    curl -L https://github.com/websupport-sk/pecl-memcache/archive/NON_BLOCKING_IO_php7.zip -o pecl-memcache.zip && \
+    unzip pecl-memcache.zip && \
+    cd pecl-memcache-NON_BLOCKING_IO_php7 && \
+    phpize --clean && \
+    phpize && \
+    ./configure && \
+    make && \
+    make install && \
+    docker-php-ext-enable memcache && \
+    cd ~/ && rm -Rf ~/pecl-memcache-NON_BLOCKING_IO_php7
+RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
+    && pecl install memcached \
+    && docker-php-ext-enable memcached
+
 # Install PECL Extensions
 RUN pecl install mongodb \
     && docker-php-ext-enable mongodb
@@ -43,7 +58,7 @@ RUN pecl install mongodb \
 RUN echo "memory_limit = 256M" > "/usr/local/etc/php/conf.d/memory-limit.ini"
 
 # Display all errors by default
-RUN echo "error_reporting = E_ALL" > "/usr/local/etc/php/conf.d/error-reporting.ini"
+RUN echo "error_reporting = E_ALL & ~E_DEPRECATED" > "/usr/local/etc/php/conf.d/error-reporting.ini"
 
 # Install Composer
 RUN curl -o /tmp/composer-setup.php https://getcomposer.org/installer \
