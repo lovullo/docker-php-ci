@@ -50,6 +50,15 @@ RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
     && pecl install memcached \
     && docker-php-ext-enable memcached
 
+# SQLA PHP Driver
+RUN curl -fsSL 'http://d5d4ifzqzkhwt.cloudfront.net/drivers/php/SQLAnywhere-php-7.1_Linux.tar.gz' -o sqlany-php71.tar.gz \
+    && mkdir -p /tmp/sqlany \
+    && tar -xf sqlany-php71.tar.gz -C /tmp/sqlany --strip-components=1 \
+    && rm sqlany-php71.tar.gz \
+    && cp /tmp/sqlany/lib64/*.so $(php -i | grep extension_dir | head -n 1 | awk '{print $3}')/ && \
+    echo "extension=php-7.1.0_sqlanywhere.so" > $PHP_INI_DIR/conf.d/sqlanywhere.ini \
+    && rm -r /tmp/sqlany
+
 # Install PECL Extensions
 RUN pecl install mongodb \
     && docker-php-ext-enable mongodb
