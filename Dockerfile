@@ -60,7 +60,7 @@ RUN curl -fsSL 'http://d5d4ifzqzkhwt.cloudfront.net/drivers/php/SQLAnywhere-php-
     && rm -r /tmp/sqlany
 
 # Install PECL Extensions
-RUN pecl install mongodb \
+RUN pecl install mongodb-1.4.4 \
     && docker-php-ext-enable mongodb
 
 # Fix php memory limit so that the phpdbg/phpunit test doesn't fail
