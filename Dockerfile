@@ -6,27 +6,40 @@ FROM php:$PHPVER
 RUN if [ ! -d /usr/share/man/man1 ]; then \
         mkdir -p /usr/share/man/man1; \
     fi
+
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/New_York
+WORKDIR /tmp/
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # Update and Install Packages
-RUN apt-get update -y && apt-get install -y \
-    ant \
-    curl \
-    git \
-    libc-client-dev \
-    libcurl4-gnutls-dev \
-    libfreetype6-dev \
-    libkrb5-dev \
-    libxslt1-dev \
-    libxslt1.1 \
-    openssh-client \
-    rsync \
-    unzip \
-    libzip-dev \
-    zlib1g-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Ignoring: DL3008 Pin versions
+# hadolint ignore=DL3008
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
+    echo $TZ > /etc/timezone && \
+    apt-get update -y && \
+    apt-get install --no-install-recommends -y \
+        ant \
+        curl \
+        git \
+        libc-client-dev \
+        libcurl4-gnutls-dev \
+        libfreetype6-dev \
+        libkrb5-dev \
+        libxslt1-dev \
+        libxslt1.1 \
+        openssh-client \
+        rsync \
+        unzip \
+        libzip-dev \
+        zlib1g-dev \
+        libmemcached-dev \
+        re2c && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install PHP Modules
-RUN PHP_OPENSSL=yes docker-php-ext-configure imap --with-kerberos --with-imap-ssl && \
-    docker-php-ext-install -j$(nproc) \
+RUN PHP_OPENSSL="yes" docker-php-ext-configure imap --with-kerberos --with-imap-ssl && \
+    docker-php-ext-install -j"$(nproc)" \
         bcmath \
         curl \
         gd \
@@ -38,8 +51,9 @@ RUN PHP_OPENSSL=yes docker-php-ext-configure imap --with-kerberos --with-imap-ss
         xsl \
         zip
 
-RUN cd ~/ && \
-    curl -L https://github.com/websupport-sk/pecl-memcache/archive/NON_BLOCKING_IO_php7.zip -o pecl-memcache.zip && \
+# Ignoring: DL3003 Use WORKDIR
+# hadolint ignore=DL3003
+RUN curl -L https://github.com/websupport-sk/pecl-memcache/archive/NON_BLOCKING_IO_php7.zip -o pecl-memcache.zip && \
     unzip pecl-memcache.zip && \
     cd pecl-memcache-NON_BLOCKING_IO_php7 && \
     phpize --clean && \
@@ -48,35 +62,42 @@ RUN cd ~/ && \
     make && \
     make install && \
     docker-php-ext-enable memcache && \
-    cd ~/ && rm -Rf ~/pecl-memcache-NON_BLOCKING_IO_php7
-RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
-    && pecl install memcached \
-    && docker-php-ext-enable memcached && php -m | grep memcached
+    cd ..  && \
+    rm -Rf pecl-memcache-NON_BLOCKING_IO_php7
 
+RUN pecl install memcached && \
+    docker-php-ext-enable memcached && \
+    php -m | grep memcached
 
-# Install sqlanywhere client/library and php driver
-WORKDIR /tmp
-# SQLA Client Library
-RUN apt-get install -o Dpkg::Options::=--force-confdef -y re2c && \
-    curl -fsSL http://d5d4ifzqzkhwt.cloudfront.net/sqla17client/sqla17_client_linux_x86x64.tar.gz -o sqla17_client_linux_x86x64.tar.gz && \
+# Install sqlanywhere/SQLA Client Library
+# Ignoring: DL3003 Use WORKDIR
+# hadolint ignore=DL3003
+RUN curl -fsSL http://d5d4ifzqzkhwt.cloudfront.net/sqla17client/sqla17_client_linux_x86x64.tar.gz -o sqla17_client_linux_x86x64.tar.gz && \
     tar -xzvpf sqla17_client_linux_x86x64.tar.gz && \
     cd client1700 && \
-    ./setup -nogui -silent -I_accept_the_license_agreement -install sqlany_client32,sqlany_client64,ultralite64 \
-    && rm -Rf /tmp/client1700 \
-    && rm -Rf /tmp/sqla17_client_linux_x86x64.tar.gz
+    ./setup -nogui -silent -I_accept_the_license_agreement -install sqlany_client32,sqlany_client64,ultralite64 && \
+    cd .. && \
+    rm -Rf client1700 && \
+    rm -Rf sqla17_client_linux_x86x64.tar.gz
+
 ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libfakeroot:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/opt/sqlanywhere17/lib64
-# SQLA PHP Driver
-RUN  export PHPVERNUM=$(echo $PHP_VERSION | awk -F '\.' '{print $1"."$2}') && echo "PHPVERNUM: ${PHPVERNUM}" && curl -fsSL "http://d5d4ifzqzkhwt.cloudfront.net/drivers/php/SQLAnywhere-php-${PHPVERNUM}_Linux.tar.gz" -o sqlany-php.tar.gz \
-    && mkdir -p /tmp/sqlany \
-    && tar -xf sqlany-php.tar.gz -C /tmp/sqlany --strip-components=1 \
-    && rm sqlany-php.tar.gz \
-    && cp /tmp/sqlany/lib64/*.so $(php -i | grep extension_dir | head -n 1 | awk '{print $3}')/ && \
-    echo "extension=$(basename  `ls /tmp/sqlany/lib64/*.so | grep -v '_r.so'`)" > $PHP_INI_DIR/conf.d/sqlanywhere.ini \
-    && rm -Rf /tmp/sqlany && php -m | grep sqlanywhere
+# Install sqlanywhere/SQLA PHP Driver
+RUN PHPVERNUM="$(echo "$PHP_VERSION" | awk -F '\.' '{print $1"."$2}')" && \
+    export PHPVERNUM && \
+    echo "PHPVERNUM: ${PHPVERNUM}" && \
+    curl -fsSL "http://d5d4ifzqzkhwt.cloudfront.net/drivers/php/SQLAnywhere-php-${PHPVERNUM}_Linux.tar.gz" -o sqlany-php.tar.gz && \
+    mkdir -p sqlany && \
+    tar -xf sqlany-php.tar.gz -C sqlany --strip-components=1 && \
+    cp sqlany/lib64/*.so "$(php -i | grep extension_dir | head -n 1 | awk '{print $3}')/" && \
+    echo "extension=$(basename  "$(ls sqlany/lib64/*sqlanywhere.so)")" > "${PHP_INI_DIR}/conf.d/sqlanywhere.ini" && \
+    rm -Rf sqlany && \
+    rm sqlany-php.tar.gz && \
+    php -m | grep sqlanywhere
 
 # Install PECL Extensions
-RUN pecl install mongodb-1.4.4 \
-    && docker-php-ext-enable mongodb && php -m | grep mongodb
+RUN pecl install mongodb-1.4.4 && \
+    docker-php-ext-enable mongodb && \
+    php -m | grep mongodb
 
 # Fix php memory limit so that the phpdbg/phpunit test doesn't fail
 RUN echo "memory_limit = 256M" > "/usr/local/etc/php/conf.d/memory-limit.ini"
