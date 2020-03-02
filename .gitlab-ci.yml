@@ -1,0 +1,32 @@
+---
+image: docker
+
+include:
+  - project: 'devops/shared-pipelines'
+    file: '/jobs-common.yml'
+  - project: 'devops/shared-pipelines'
+    file: '/jobs-docker.yml'
+
+stages:
+  - build
+  - deploy
+
+build_docker:
+  extends: .build_docker
+
+build_docker_php73:
+  extends: .build_docker
+  variables:
+    DOCK_CACHE_TAG: "7.3"
+    BUILD_ARG: '--build-arg PHPVER=7.3-cli'
+
+deploy_dockerhub:
+  extends: .deploy_dockerhub
+  variables:
+    DOCKERHUB_IMAGE: "lovullo/php-ci"
+
+deploy_dockerhub_73:
+  extends: .deploy_dockerhub
+  variables:
+    DOCK_CACHE_TAG: "7.3"
+    DOCKERHUB_IMAGE: "lovullo/php-ci"
