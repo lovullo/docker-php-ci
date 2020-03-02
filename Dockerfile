@@ -1,9 +1,11 @@
-FROM php:7.1-stretch
+# Default php version to use can be overidden when building
+ARG PHPVER=7.2-cli
+FROM php:$PHPVER
 
 # deal with slim variants not having man page directories (which causes "update-alternatives" to fail)
-RUN	if [ ! -d /usr/share/man/man1 ]; then \
-		mkdir -p /usr/share/man/man1; \
-	fi
+RUN if [ ! -d /usr/share/man/man1 ]; then \
+        mkdir -p /usr/share/man/man1; \
+    fi
 # Update and Install Packages
 RUN apt-get update -y && apt-get install -y \
     ant \
@@ -18,11 +20,12 @@ RUN apt-get update -y && apt-get install -y \
     openssh-client \
     rsync \
     unzip \
+    libzip-dev \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP Modules
-RUN docker-php-ext-configure imap --with-kerberos --with-imap-ssl && \
+RUN PHP_OPENSSL=yes docker-php-ext-configure imap --with-kerberos --with-imap-ssl && \
     docker-php-ext-install -j$(nproc) \
         bcmath \
         curl \
@@ -48,20 +51,32 @@ RUN cd ~/ && \
     cd ~/ && rm -Rf ~/pecl-memcache-NON_BLOCKING_IO_php7
 RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
     && pecl install memcached \
-    && docker-php-ext-enable memcached
+    && docker-php-ext-enable memcached && php -m | grep memcached
 
+
+# Install sqlanywhere client/library and php driver
+WORKDIR /tmp
+# SQLA Client Library
+RUN apt-get install -o Dpkg::Options::=--force-confdef -y re2c && \
+    curl -fsSL http://d5d4ifzqzkhwt.cloudfront.net/sqla17client/sqla17_client_linux_x86x64.tar.gz -o sqla17_client_linux_x86x64.tar.gz && \
+    tar -xzvpf sqla17_client_linux_x86x64.tar.gz && \
+    cd client1700 && \
+    ./setup -nogui -silent -I_accept_the_license_agreement -install sqlany_client32,sqlany_client64,ultralite64 \
+    && rm -Rf /tmp/client1700 \
+    && rm -Rf /tmp/sqla17_client_linux_x86x64.tar.gz
+ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libfakeroot:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/opt/sqlanywhere17/lib64
 # SQLA PHP Driver
-RUN curl -fsSL 'http://d5d4ifzqzkhwt.cloudfront.net/drivers/php/SQLAnywhere-php-7.1_Linux.tar.gz' -o sqlany-php71.tar.gz \
+RUN  export PHPVERNUM=$(echo $PHP_VERSION | awk -F '\.' '{print $1"."$2}') && echo "PHPVERNUM: ${PHPVERNUM}" && curl -fsSL "http://d5d4ifzqzkhwt.cloudfront.net/drivers/php/SQLAnywhere-php-${PHPVERNUM}_Linux.tar.gz" -o sqlany-php.tar.gz \
     && mkdir -p /tmp/sqlany \
-    && tar -xf sqlany-php71.tar.gz -C /tmp/sqlany --strip-components=1 \
-    && rm sqlany-php71.tar.gz \
+    && tar -xf sqlany-php.tar.gz -C /tmp/sqlany --strip-components=1 \
+    && rm sqlany-php.tar.gz \
     && cp /tmp/sqlany/lib64/*.so $(php -i | grep extension_dir | head -n 1 | awk '{print $3}')/ && \
-    echo "extension=php-7.1.0_sqlanywhere.so" > $PHP_INI_DIR/conf.d/sqlanywhere.ini \
-    && rm -r /tmp/sqlany
+    echo "extension=$(basename  `ls /tmp/sqlany/lib64/*.so | grep -v '_r.so'`)" > $PHP_INI_DIR/conf.d/sqlanywhere.ini \
+    && rm -Rf /tmp/sqlany && php -m | grep sqlanywhere
 
 # Install PECL Extensions
 RUN pecl install mongodb-1.4.4 \
-    && docker-php-ext-enable mongodb
+    && docker-php-ext-enable mongodb && php -m | grep mongodb
 
 # Fix php memory limit so that the phpdbg/phpunit test doesn't fail
 RUN echo "memory_limit = 256M" > "/usr/local/etc/php/conf.d/memory-limit.ini"
@@ -75,7 +90,7 @@ RUN curl -o /tmp/composer-setup.php https://getcomposer.org/installer \
     && php -r "if (hash('SHA384', file_get_contents('/tmp/composer-setup.php')) !== trim(file_get_contents('/tmp/composer-setup.sig'))) { unlink('/tmp/composer-setup.php'); echo 'Invalid installer' . PHP_EOL; exit(1);  }" \
     && php /tmp/composer-setup.php --no-ansi --install-dir=/usr/local/bin --filename=composer \
     && rm /tmp/composer-setup.php
-    
+
 # Install Ant libraries
 RUN curl -O http://dl.google.com/closure-compiler/compiler-20161201.tar.gz && \
     tar -xzvf compiler-20161201.tar.gz closure-compiler-v20161201.jar && \
