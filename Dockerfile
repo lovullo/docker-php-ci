@@ -99,8 +99,11 @@ RUN pecl install mongodb-1.4.4 && \
     docker-php-ext-enable mongodb && \
     php -m | grep mongodb
 
+# Use the default production configuration
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
 # Fix php memory limit so that the phpdbg/phpunit test doesn't fail
-RUN echo "memory_limit = 256M" > "/usr/local/etc/php/conf.d/memory-limit.ini"
+RUN echo "memory_limit = 512M" > "/usr/local/etc/php/conf.d/memory-limit.ini"
 
 # Display all errors by default
 RUN echo "error_reporting = E_ALL & ~E_DEPRECATED" > "/usr/local/etc/php/conf.d/error-reporting.ini"
