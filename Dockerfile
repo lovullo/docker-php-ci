@@ -81,18 +81,12 @@ RUN curl -fsSL http://d5d4ifzqzkhwt.cloudfront.net/sqla17client/sqla17_client_li
     rm -Rf sqla17_client_linux_x86x64.tar.gz
 
 ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libfakeroot:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/opt/sqlanywhere17/lib64
-# Install sqlanywhere/SQLA PHP Driver
-RUN PHPVERNUM="$(echo "$PHP_VERSION" | awk -F '\.' '{print $1"."$2}')" && \
-    export PHPVERNUM && \
-    echo "PHPVERNUM: ${PHPVERNUM}" && \
-    curl -fsSL "http://d5d4ifzqzkhwt.cloudfront.net/drivers/php/SQLAnywhere-php-${PHPVERNUM}_Linux.tar.gz" -o sqlany-php.tar.gz && \
-    mkdir -p sqlany && \
-    tar -xf sqlany-php.tar.gz -C sqlany --strip-components=1 && \
-    cp sqlany/lib64/*.so "$(php -i | grep extension_dir | head -n 1 | awk '{print $3}')/" && \
-    echo "extension=$(basename  "$(ls sqlany/lib64/*sqlanywhere.so)")" > "${PHP_INI_DIR}/conf.d/sqlanywhere.ini" && \
-    rm -Rf sqlany && \
-    rm sqlany-php.tar.gz && \
-    php -m | grep sqlanywhere
+
+# Build or Install sqlanywhere/SQLA PHP Driver
+COPY sqla-php-driver-install.sh sqla-php-driver-install.sh
+RUN ./sqla-php-driver-install.sh && \
+    php -m | grep sqlanywhere && \
+    rm sqla-php-driver-install.sh
 
 # Install PECL Extensions
 RUN pecl install mongodb-1.4.4 && \
@@ -124,6 +118,5 @@ RUN curl -O http://dl.google.com/closure-compiler/compiler-20161201.tar.gz && \
     rm compiler-20161201.tar.gz
 
 # Disable host key checking from within builds as we cannot interactively accept them
-# TODO: It might be a better idea to bake ~/.ssh/known_hosts into the container
 RUN mkdir -p ~/.ssh
 RUN printf "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
