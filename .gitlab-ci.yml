@@ -20,6 +20,12 @@ build_docker_php73:
     DOCK_CACHE_TAG: "7.3"
     BUILD_ARG: '--build-arg PHPVER=7.3-cli'
 
+build_docker_php74:
+  extends: .build_docker
+  variables:
+    DOCK_CACHE_TAG: "7.4"
+    BUILD_ARG: '--build-arg PHPVER=7.4-cli'
+
 deploy_dockerhub:
   extends: .deploy_dockerhub
   variables:
@@ -29,4 +35,10 @@ deploy_dockerhub_73:
   extends: .deploy_dockerhub
   variables:
     DOCK_CACHE_TAG: "7.3"
+    DOCKERHUB_IMAGE: "lovullo/php-ci"
+
+deploy_dockerhub_74:
+  extends: .deploy_dockerhub
+  variables:
+    DOCK_CACHE_TAG: "7.4"
     DOCKERHUB_IMAGE: "lovullo/php-ci"
