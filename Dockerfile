@@ -12,6 +12,9 @@ ENV TZ=America/New_York
 WORKDIR /tmp/
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
+# Use the default development configuration
+RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
+
 # Update and Install Packages
 # Ignoring: DL3008 Pin versions
 # hadolint ignore=DL3008
@@ -76,11 +79,21 @@ RUN curl -fsSL http://d5d4ifzqzkhwt.cloudfront.net/sqla17client/sqla17_client_li
     tar -xzvpf sqla17_client_linux_x86x64.tar.gz && \
     cd "$(tar --list -f sqla17_client_linux_x86x64.tar.gz  | sort | head -1)" && \
     ./setup -nogui -silent -I_accept_the_license_agreement -install sqlany_client32,sqlany_client64,ultralite64 && \
+    chmod +x /opt/sqlanywhere17/bin64/sa_config.sh && \
+    echo ". /opt/sqlanywhere17/bin64/sa_config.sh" >> /etc/environment && \
+    source /etc/environment && \
     cd .. && \
     rm -Rf "$(tar --list -f sqla17_client_linux_x86x64.tar.gz  | sort | head -1)" && \
     rm -Rf sqla17_client_linux_x86x64.tar.gz
 
-ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libfakeroot:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/opt/sqlanywhere17/lib64
+# Environment Variables were manually copied from /opt/sqlanywhere17/bin64/sa_config.sh
+ENV SQLANYSAMP17="/opt/sqlanywhere17/samples"
+ENV SQLANY17="/opt/sqlanywhere17"
+ENV SQLANYSAMP17="/opt/sqlanywhere17/samples"
+ENV PATH="$SQLANY17/bin64:$SQLANY17/bin32:${PATH:-}"
+ENV NODE_PATH="$SQLANY17/node:${NODE_PATH:-}"
+ENV LD_LIBRARY_PATH="$SQLANY17/lib32:${LD_LIBRARY_PATH:-}"
+ENV LD_LIBRARY_PATH="$SQLANY17/lib64:${LD_LIBRARY_PATH:-}"
 
 # Build or Install sqlanywhere/SQLA PHP Driver
 COPY sqla-php-driver-install.sh sqla-php-driver-install.sh

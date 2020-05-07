@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -ex
 set -o pipefail
 
 PHPVERNUM=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
@@ -13,7 +13,8 @@ if [ "${PHPVERNUM}" != "7.4" ]; then
   mkdir -p sqlany
   tar -xf sqlany-php.tar.gz -C sqlany --strip-components=1
   cp sqlany/lib64/*.so "$(php -i | grep extension_dir | head -n 1 | awk '{print $3}')/"
-  echo "extension=$(basename  "$(ls sqlany/lib64/*sqlanywhere.so)")" > "${PHP_INI_DIR}/conf.d/sqlanywhere.ini"
+  #echo "extension=$(basename  "$(ls sqlany/lib64/*sqlanywhere.so)")" > "${PHP_INI_DIR}/conf.d/sqlanywhere.ini"
+  docker-php-ext-enable "$(basename  "$(ls sqlany/lib64/*sqlanywhere.so)")"
   rm -Rf sqlany
   rm sqlany-php.tar.gz
   php -m | grep sqlanywhere
