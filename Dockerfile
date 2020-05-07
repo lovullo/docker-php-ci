@@ -74,10 +74,10 @@ RUN pecl install memcached && \
 # hadolint ignore=DL3003
 RUN curl -fsSL http://d5d4ifzqzkhwt.cloudfront.net/sqla17client/sqla17_client_linux_x86x64.tar.gz -o sqla17_client_linux_x86x64.tar.gz && \
     tar -xzvpf sqla17_client_linux_x86x64.tar.gz && \
-    cd client1700 && \
+    cd "$(tar --list -f sqla17_client_linux_x86x64.tar.gz  | sort | head -1)" && \
     ./setup -nogui -silent -I_accept_the_license_agreement -install sqlany_client32,sqlany_client64,ultralite64 && \
     cd .. && \
-    rm -Rf client1700 && \
+    rm -Rf "$(tar --list -f sqla17_client_linux_x86x64.tar.gz  | sort | head -1)" && \
     rm -Rf sqla17_client_linux_x86x64.tar.gz
 
 ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libfakeroot:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/opt/sqlanywhere17/lib64
