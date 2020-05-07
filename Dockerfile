@@ -74,7 +74,7 @@ RUN pecl install memcached && \
 
 # Install sqlanywhere/SQLA Client Library
 # Ignoring: DL3003 Use WORKDIR
-# hadolint ignore=DL3003
+# hadolint ignore=DL3003,SC1091
 RUN curl -fsSL http://d5d4ifzqzkhwt.cloudfront.net/sqla17client/sqla17_client_linux_x86x64.tar.gz -o sqla17_client_linux_x86x64.tar.gz && \
     tar -xzvpf sqla17_client_linux_x86x64.tar.gz && \
     cd "$(tar --list -f sqla17_client_linux_x86x64.tar.gz  | sort | head -1)" && \
